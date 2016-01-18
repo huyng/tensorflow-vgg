@@ -47,25 +47,44 @@ def loss(logits, labels):
 
 
 def inference(input_op):
-    conv1 = conv_op(input_op, name="conv1", kh=3, kw=3, n_in=3, n_out=64, dh=1, dw=1)
-    pool1 = mpool_op(conv1,   name="pool1", kh=2, kw=2, dw=2, dh=2)
-    conv2 = conv_op(pool1,    name="conv2", kh=3, kw=3, n_in=64, n_out=128, dh=1, dw=1)
-    pool2 = mpool_op(conv2,   name="pool2", kh=2, kw=2, dh=2, dw=2)
-    conv3 = conv_op(pool2,    name="conv3", kh=3, kw=3, n_in=128, n_out=512, dh=1, dw=1)
-    conv4 = conv_op(conv3,    name="conv4", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
-    pool4 = mpool_op(conv4,   name="pool4", kh=2, kw=2, dh=2, dw=2)
-    conv5 = conv_op(pool4,    name="conv5", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
-    conv6 = conv_op(conv5,    name="conv6", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
-    pool6 = mpool_op(conv6,   name="pool6", kh=2, kw=2, dh=2, dw=2)
-    conv7 = conv_op(pool6,    name="conv7", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
-    conv8 = conv_op(conv7,    name="conv8", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
-    pool8 = mpool_op(conv8,   name="pool8", kh=2, kw=2, dw=2, dh=2)
-    resh1 = tf.reshape(pool8, [-1,512*7*7], name="resh1")
-    affn1 = affine_op(resh1,  name="affn1", n_in=512*7*7, n_out=4096)
-    affn2 = affine_op(affn1,  name="affn2", n_in=4096, n_out=10)
-    affn3 = affine_op(affn2,  name="affn3", n_in=10, n_out=10)
-    return affn3
-    # return affn1
+
+    # assume input_op shape is 224x224x3
+
+    # block 1 -- outputs 112x112x64
+    conv1_1 = conv_op(input_op, name="conv1_1", kh=3, kw=3, n_in=3, n_out=64, dh=1, dw=1)
+    conv1_2 = conv_op(conv1_1,  name="conv1_2", kh=3, kw=3, n_in=3, n_out=64, dh=1, dw=1)
+    pool1 = mpool_op(conv1_2,   name="pool1",   kh=2, kw=2, dw=2, dh=2)
+
+    # block 2 -- outputs 56x56x128
+    conv2_1 = conv_op(pool1,    name="conv2_1", kh=3, kw=3, n_in=64,  n_out=128, dh=1, dw=1)
+    conv2_2 = conv_op(conv2_1,  name="conv2_2", kh=3, kw=3, n_in=128, n_out=128, dh=1, dw=1)
+    pool2 = mpool_op(conv2_2,   name="pool2",   kh=2, kw=2, dh=2, dw=2)
+
+    # block 3 -- outputs 28x28x256
+    conv3_1 = conv_op(pool2,    name="conv3_1", kh=3, kw=3, n_in=128, n_out=256, dh=1, dw=1)
+    conv3_2 = conv_op(conv3_1,  name="conv3_2", kh=3, kw=3, n_in=256, n_out=256, dh=1, dw=1)
+    pool3 = mpool_op(conv3_2,   name="pool3",   kh=2, kw=2, dh=2, dw=2)
+
+    # block 4 -- outputs 14x14x512
+    conv4_1 = conv_op(pool3,    name="conv4_1", kh=3, kw=3, n_in=256, n_out=512, dh=1, dw=1)
+    conv4_2 = conv_op(conv4_1,  name="conv4_2", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
+    conv4_3 = conv_op(conv4_2,  name="conv4_2", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
+    pool4 = mpool_op(conv4_3,   name="pool4",   kh=2, kw=2, dh=2, dw=2)
+
+    # block 5 -- outputs 7x7x512
+    conv5_1 = conv_op(pool4,    name="conv5_1", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
+    conv5_2 = conv_op(conv5_1,  name="conv5_2", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
+    conv5_3 = conv_op(conv5_2,  name="conv5_3", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
+    pool5 = mpool_op(conv8,     name="pool5",   kh=2, kw=2, dw=2, dh=2)
+
+    # flatten
+    resh1 = tf.reshape(pool8, [-1, 512*7*7], name="resh1")
+
+    # fully connected
+    fc6 = affine_op(resh1,      name="fc6", n_in=512*7*7, n_out=4096)
+    fc7 = affine_op(fc7,        name="fc7", n_in=4096, n_out=10)
+    fc8 = affine_op(fc8,        name="fc8", n_in=10, n_out=10)
+    return fc8
 
 
 def train(lr=0.00001, max_step=1000):
