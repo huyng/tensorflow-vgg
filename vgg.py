@@ -9,7 +9,7 @@ import tensorflow.python.platform
 import tensorflow as tf
 
 
-batch_size = 2
+batch_size = 8
 
 def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
     with tf.name_scope(name) as scope:
