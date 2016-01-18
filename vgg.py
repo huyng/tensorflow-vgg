@@ -177,8 +177,13 @@ def train(lr=0.00001, max_step=1000):
         global_step = tf.Variable(0, name="global_step", trainable=False)
         train_step = optimizer.minimize(objective, global_step=global_step)
 
-        # grab variables we want to log
+        ema = tf.train.ExponentialMovingAverage(0.999)
+        maintain_averages_op = ema.apply([objective])
+
+
+        # grab summary variables we want to log
         tf.scalar_summary("loss function", objective)
+        tf.scalar_summary("avg loss function", ema.average(objective))
 
         summaries = tf.merge_all_summaries()
 
@@ -198,7 +203,7 @@ def train(lr=0.00001, max_step=1000):
                 Y = np.array(batch[1])
 
                 result = sess.run(
-                    [train_step, summaries, objective],
+                    [train_step, summaries, objective, maintain_averages_op],
                     feed_dict = {
                         in_images: X,
                         labels: Y,
@@ -206,10 +211,9 @@ def train(lr=0.00001, max_step=1000):
                     }
                 )
                 writer.add_summary(result[1], i)
-                print i, result[2]
+                print "step:%s loss = %s" % (i, result[2])
                 if result[2] is np.NaN:
                     return
-
 
 
 
