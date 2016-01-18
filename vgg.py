@@ -23,8 +23,8 @@ def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
 
 def affine_op(input_op, name, n_in, n_out):
     with tf.name_scope(name) as scope:
-        kernel = tf.Variable(tf.truncated_normal([n_in, n_out], dtype=tf.float32, stddev=1e-1),  trainable=True, name='weights')
-        biases = tf.Variable(tf.constant(0.0, shape=[n_out], dtype=tf.float32), trainable=True, name='biases')
+        kernel = tf.Variable(tf.truncated_normal([n_in, n_out], dtype=tf.float32, stddev=1e-1),  name='weights')
+        biases = tf.Variable(tf.constant(0.0, shape=[n_out], dtype=tf.float32), name='biases')
         affine1 = tf.nn.relu_layer(input_op, kernel, biases, name=name)
         return affine1
 
@@ -59,16 +59,16 @@ def inference(input_op):
     conv7 = conv_op(pool6,    name="conv7", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
     conv8 = conv_op(conv7,    name="conv8", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
     pool8 = mpool_op(conv8,   name="pool8", kh=2, kw=2, dw=2, dh=2)
+    # resh1 = tf.reshape(conv1, [-1, 224*224], name="resh1")
     resh1 = tf.reshape(pool8, [-1,512*7*7], name="resh1")
     affn1 = affine_op(resh1,  name="affn1", n_in=512*7*7, n_out=4096)
     affn2 = affine_op(affn1,  name="affn2", n_in=4096, n_out=4096)
     affn3 = affine_op(affn2,  name="affn3", n_in=4096, n_out=1000)
     return affn3
+    # return affn1
 
-def predict():
-    pass
 
-def train(lr=0.01):
+def train(lr=0.01, max_step=1000):
     """
     train model
 
@@ -77,11 +77,9 @@ def train(lr=0.01):
     with tf.Graph().as_default():
         # Generate some dummy images.
         image_size = 224
-        images = tf.Variable(tf.random_normal([batch_size,
-                                               image_size,
-                                               image_size, 3],
+        images = tf.Variable(tf.random_normal([batch_size, image_size, image_size, 3],
                                               dtype=tf.float32,
-                                              stddev=1e-1))
+                                              stddev=1))
 
         labels = tf.Variable(tf.ones([batch_size], dtype=tf.int32))
 
@@ -90,20 +88,31 @@ def train(lr=0.01):
         last_layer = inference(images)
 
 
+
+        # Add a simple objective so we can calculate the backward pass.
+        objective = loss(last_layer, labels)
+        optimizer = tf.train.GradientDescentOptimizer(lr)
+        global_step = tf.Variable(0, name="global_step", trainable=False)
+        train_step = optimizer.minimize(objective)
+
+        # grab variables we want to log
+        tf.scalar_summary("loss", objective)
+
+        summaries = tf.merge_all_summaries()
+
         # Build an initialization operation.
         initializer = tf.initialize_all_variables()
 
         # Start running operations on the Graph.
-        sess = tf.Session()
-        sess.run(initializer)
+        with tf.Session() as sess:
+            sess.run(initializer)
+            writer = tf.train.SummaryWriter("train_logs", graph_def=sess.graph_def)
+            for i in range(max_step):
+                result = sess.run([train_step, summaries, objective])
+                writer.add_summary(result[1], i)
 
-        # Add a simple objective so we can calculate the backward pass.
-        objective = loss(last_layer, labels)
-        train_step = tf.train.GradientDescentOptimizer(lr).minimize(objective)
-        for i in range(1000):
-            print i
-            sess.run(train_step)
-        sess.close()
+                print i, result[2]
+
 
 
 
