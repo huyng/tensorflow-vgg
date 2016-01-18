@@ -46,7 +46,7 @@ def loss(logits, labels):
     return loss
 
 
-def inference(input_op, dropout_keep_prob):
+def inference_vgg(input_op, dropout_keep_prob):
 
     # assume input_op shape is 224x224x3
 
@@ -86,11 +86,37 @@ def inference(input_op, dropout_keep_prob):
     fc6_drop = tf.nn.dropout(fc6, dropout_keep_prob, name="fc6_drop")
 
     fc7 = fc_op(fc6_drop, name="fc7", n_in=4096, n_out=10)
-    fc7_drop = tf.nn.dropout(fc7, dropout_keep_prob, name="fc6_drop")
+    fc7_drop = tf.nn.dropout(fc7, dropout_keep_prob, name="fc7_drop")
 
     fc8 = fc_op(fc7_drop, name="fc8", n_in=10, n_out=10)
     return fc8
 
+
+def inference_mini_vgg(input_op, dropout_keep_prob):
+    # assume input_op shape is 224x224x3
+
+    # block 1 -- outputs 56x56x64
+    conv1_1 = conv_op(input_op, name="conv1_1", kh=3, kw=3, n_in=3,  n_out=64, dh=1, dw=1)
+    conv1_2 = conv_op(conv1_1,  name="conv1_2", kh=3, kw=3, n_in=64, n_out=64, dh=1, dw=1)
+    pool1 = mpool_op(conv1_2,   name="pool1",   kh=4, kw=4, dw=4, dh=4)
+
+    # block 2 -- outputs 7x7x128
+    conv2_1 = conv_op(pool1,    name="conv2_1", kh=3, kw=3, n_in=64,  n_out=128, dh=1, dw=1)
+    conv2_2 = conv_op(conv2_1,  name="conv2_2", kh=3, kw=3, n_in=128, n_out=128, dh=1, dw=1)
+    pool2 = mpool_op(conv2_2,   name="pool2",   kh=8, kw=8, dh=8, dw=8)
+
+    # flatten
+    resh1 = tf.reshape(pool2, [-1, 128*7*7], name="resh1")
+
+    # fully connected
+    fc6 = fc_op(resh1, name="fc6", n_in=128*7*7, n_out=4096)
+    fc6_drop = tf.nn.dropout(fc6, dropout_keep_prob, name="fc6_drop")
+
+    fc7 = fc_op(fc6_drop, name="fc7", n_in=4096, n_out=10)
+    fc7_drop = tf.nn.dropout(fc7, dropout_keep_prob, name="fc7_drop")
+
+    fc8 = fc_op(fc7_drop, name="fc8", n_in=10, n_out=10)
+    return fc8
 
 def random_test_input():
     """
@@ -106,6 +132,25 @@ def random_test_input():
     images = tf.Variable(init_val)
     labels = tf.Variable(tf.ones([batch_size], dtype=tf.int32))
     return images, labels
+
+def evaluation(logits, labels):
+    """Evaluate the quality of the logits at predicting the label.
+
+    Args:
+        logits: Logits tensor, float - [batch_size, NUM_CLASSES].
+        labels: Labels tensor, int32 - [batch_size], with values in the range [0, NUM_CLASSES).
+    Returns:
+        A scalar int32 tensor with the number of examples (out of batch_size)
+        that were predicted correctly.
+
+    """
+    # For a classifier model, we can use the in_top_k Op.
+    # It returns a bool tensor with shape [batch_size] that is true for
+    # the examples where the label's is was in the top k (here k=1)
+    # of all logits for that example.
+    correct = tf.nn.in_top_k(logits, labels, 1)
+    # Return the number of true entries.
+    return tf.reduce_sum(tf.cast(correct, tf.int32))
 
 def train(lr=0.00001, max_step=1000):
     """
@@ -123,17 +168,17 @@ def train(lr=0.00001, max_step=1000):
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        last_layer = inference(images, dropout_keep_prob)
+        # last_layer = inference_vgg(images, dropout_keep_prob)
+        last_layer = inference_mini_vgg(images, dropout_keep_prob)
 
         # Add a simple objective so we can calculate the backward pass.
         objective = loss(last_layer, labels)
         optimizer = tf.train.AdagradOptimizer(lr)
         global_step = tf.Variable(0, name="global_step", trainable=False)
-        train_step = optimizer.minimize(objective)
+        train_step = optimizer.minimize(objective, global_step=global_step)
 
         # grab variables we want to log
-        tf.scalar_summary("loss", objective)
-        tf.image_summary("images", images)
+        tf.scalar_summary("loss function", objective)
 
         summaries = tf.merge_all_summaries()
 
@@ -149,6 +194,7 @@ def train(lr=0.00001, max_step=1000):
                 for batch in trn:
                     X = np.vstack(batch[0]).reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
                     Y = np.array(batch[1])
+                    print batch[1]
                     result = sess.run(
                         [train_step, summaries, objective],
                         feed_dict = {
