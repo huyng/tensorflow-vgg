@@ -189,23 +189,26 @@ def train(lr=0.00001, max_step=1000):
         with tf.Session() as sess:
             sess.run(initializer)
             writer = tf.train.SummaryWriter("train_logs", graph_def=sess.graph_def)
+            trn, tst = dataset.get_cifar10(batch_size)
             for i in range(max_step):
-                trn, tst = dataset.get_cifar10(batch_size)
-                for batch in trn:
-                    X = np.vstack(batch[0]).reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
-                    Y = np.array(batch[1])
-                    result = sess.run(
-                        [train_step, summaries, objective],
-                        feed_dict = {
-                            in_images: X,
-                            labels: Y,
-                            dropout_keep_prob: 0.5
-                        }
-                    )
-                    writer.add_summary(result[1], i)
-                    print i, result[2]
-                    if result[2] is np.NaN:
-                        return
+
+                # get batch and format data
+                batch = trn.next()
+                X = np.vstack(batch[0]).reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
+                Y = np.array(batch[1])
+
+                result = sess.run(
+                    [train_step, summaries, objective],
+                    feed_dict = {
+                        in_images: X,
+                        labels: Y,
+                        dropout_keep_prob: 0.5
+                    }
+                )
+                writer.add_summary(result[1], i)
+                print i, result[2]
+                if result[2] is np.NaN:
+                    return
 
 
 
