@@ -152,7 +152,7 @@ def evaluation(logits, labels):
     # Return the number of true entries.
     return tf.reduce_sum(tf.cast(correct, tf.int32))
 
-def train(lr=0.00001, max_step=1000):
+def train(lr=0.00001, max_step=12000):
     """
     train model
 
