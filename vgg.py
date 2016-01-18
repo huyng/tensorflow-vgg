@@ -46,7 +46,7 @@ def loss(logits, labels):
     return loss
 
 
-def inference_vgg(input_op, dropout_keep_prob):
+def inference_vgg(input_op, dropout_keep_prob, input_shape=224):
 
     # assume input_op shape is 224x224x3
 
@@ -78,11 +78,11 @@ def inference_vgg(input_op, dropout_keep_prob):
     pool5 = mpool_op(conv5_3,   name="pool5",   kh=2, kw=2, dw=2, dh=2)
 
     # flatten
-    resh1 = tf.reshape(pool5, [-1, 512*7*7], name="resh1")
+    flattened_shape = (input_shape/(2**5))**2 * 512 # 5 here comes from the number of pooling layers
+    resh1 = tf.reshape(pool5, [-1, flattened_shape], name="resh1")
 
     # fully connected
-
-    fc6 = fc_op(resh1, name="fc6", n_in=512*7*7, n_out=4096)
+    fc6 = fc_op(resh1, name="fc6", n_in=flattened_shape, n_out=4096)
     fc6_drop = tf.nn.dropout(fc6, dropout_keep_prob, name="fc6_drop")
 
     fc7 = fc_op(fc6_drop, name="fc7", n_in=4096, n_out=10)
@@ -161,7 +161,7 @@ def train(lr=0.00001, max_step=1000):
     with tf.Graph().as_default():
 
         in_images = tf.placeholder("float", [batch_size, 32, 32, 3])
-        images = tf.image.resize_images(in_images, 224, 224)
+        images = tf.image.resize_images(in_images, 64, 64)
         labels = tf.placeholder("int32", [batch_size])
         dropout_keep_prob = tf.placeholder("float")
 
@@ -169,7 +169,7 @@ def train(lr=0.00001, max_step=1000):
         # Build a Graph that computes the logits predictions from the
         # inference model.
         # last_layer = inference_vgg(images, dropout_keep_prob)
-        last_layer = inference_mini_vgg(images, dropout_keep_prob)
+        last_layer = inference_vgg(images, dropout_keep_prob, input_shape=64)
 
         # Add a simple objective so we can calculate the backward pass.
         objective = loss(last_layer, labels)
@@ -194,7 +194,6 @@ def train(lr=0.00001, max_step=1000):
                 for batch in trn:
                     X = np.vstack(batch[0]).reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
                     Y = np.array(batch[1])
-                    print batch[1]
                     result = sess.run(
                         [train_step, summaries, objective],
                         feed_dict = {
