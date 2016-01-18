@@ -150,7 +150,9 @@ def evaluation(logits, labels):
     # of all logits for that example.
     correct = tf.nn.in_top_k(logits, labels, 1)
     # Return the number of true entries.
-    return tf.reduce_sum(tf.cast(correct, tf.int32))
+    total_correct = tf.reduce_sum(tf.cast(correct, tf.int32))
+    accuracy = tf.reduce_mean(tf.cast(correct, tf.int32))
+    return accuracy
 
 def train(lr=0.00001, max_step=12000):
     """
@@ -173,6 +175,7 @@ def train(lr=0.00001, max_step=12000):
 
         # Add a simple objective so we can calculate the backward pass.
         objective = loss(last_layer, labels)
+        accuracy = evaluation(last_layer, labels)
         optimizer = tf.train.AdagradOptimizer(lr)
         global_step = tf.Variable(0, name="global_step", trainable=False)
         train_step = optimizer.minimize(objective, global_step=global_step)
@@ -183,6 +186,7 @@ def train(lr=0.00001, max_step=12000):
 
         # grab summary variables we want to log
         tf.scalar_summary("loss function", objective)
+        tf.scalar_summary("accuracy", accuracy)
         tf.scalar_summary("avg loss function", ema.average(objective))
 
         summaries = tf.merge_all_summaries()
@@ -203,17 +207,26 @@ def train(lr=0.00001, max_step=12000):
                 Y = np.array(batch[1])
 
                 result = sess.run(
-                    [train_step, summaries, objective, maintain_averages_op],
+                    [train_step, summaries, objective, accuracy, maintain_averages_op],
                     feed_dict = {
                         in_images: X,
                         labels: Y,
-                        dropout_keep_prob: 0.5
+                        dropout_keep_prob: 1.0
                     }
                 )
                 writer.add_summary(result[1], i)
                 print "step:%s loss = %s" % (i, result[2])
                 if result[2] is np.NaN:
                     return
+
+                # if i % 100 == 0:
+                #     batch = trn.next()
+                #     X = np.vstack(batch[0]).reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
+                #     Y = np.array(batch[1])
+                #     print sess.run(accuracy, feed_dict={
+                #
+                #     })
+
 
 
 
