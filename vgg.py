@@ -68,7 +68,7 @@ def inference(input_op):
     # return affn1
 
 
-def train(lr=0.001, max_step=1000):
+def train(lr=0.0001, max_step=1000):
     """
     train model
 
