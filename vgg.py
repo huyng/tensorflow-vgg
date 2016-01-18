@@ -87,6 +87,21 @@ def inference(input_op):
     return fc8
 
 
+def random_test_input():
+    """
+    this generates random test input, useful for debugging
+    """
+    sz = 224
+    channels = 3
+    init_val = tf.random_normal(
+        (batch_size, sz, sz, channels),
+        dtype=tf.float32,
+        stddev=1
+    )
+    images = tf.Variable(init_val)
+    labels = tf.Variable(tf.ones([batch_size], dtype=tf.int32))
+    return images, labels
+
 def train(lr=0.00001, max_step=1000):
     """
     train model
@@ -94,13 +109,6 @@ def train(lr=0.00001, max_step=1000):
     :param lr:  This is the learning rate
     """
     with tf.Graph().as_default():
-        # Generate some dummy images.
-        # image_size = 224
-        # images = tf.Variable(tf.random_normal([batch_size, image_size, image_size, 3],
-        #                                       dtype=tf.float32,
-        #                                       stddev=1))
-        #
-        # labels = tf.Variable(tf.ones([batch_size], dtype=tf.int32))
 
         in_images = tf.placeholder("float", [batch_size, 32, 32, 3])
         images = tf.image.resize_images(in_images, 224, 224)
