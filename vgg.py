@@ -9,7 +9,7 @@ import tensorflow.python.platform
 import tensorflow as tf
 
 
-batch_size = 8
+batch_size = 2
 
 def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
     with tf.name_scope(name) as scope:
@@ -22,12 +22,12 @@ def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
         activation = tf.nn.relu(z, name=scope)
         return activation
 
-def affine_op(input_op, name, n_in, n_out):
+def fc_op(input_op, name, n_in, n_out):
     with tf.name_scope(name) as scope:
         kernel = tf.Variable(tf.truncated_normal([n_in, n_out], dtype=tf.float32, stddev=1e-1), trainable=True, name='weights')
         biases = tf.Variable(tf.constant(0.0, shape=[n_out], dtype=tf.float32), trainable=True, name='biases')
-        affine1 = tf.nn.relu_layer(input_op, kernel, biases, name=name)
-        return affine1
+        activation = tf.nn.relu_layer(input_op, kernel, biases, name=name)
+        return activation
 
 def mpool_op(input_op, name, kh, kw, dh, dw):
     return tf.nn.max_pool(input_op,
@@ -46,13 +46,13 @@ def loss(logits, labels):
     return loss
 
 
-def inference(input_op):
+def inference(input_op, dropout_keep_prob):
 
     # assume input_op shape is 224x224x3
 
     # block 1 -- outputs 112x112x64
-    conv1_1 = conv_op(input_op, name="conv1_1", kh=3, kw=3, n_in=3, n_out=64, dh=1, dw=1)
-    conv1_2 = conv_op(conv1_1,  name="conv1_2", kh=3, kw=3, n_in=3, n_out=64, dh=1, dw=1)
+    conv1_1 = conv_op(input_op, name="conv1_1", kh=3, kw=3, n_in=3,  n_out=64, dh=1, dw=1)
+    conv1_2 = conv_op(conv1_1,  name="conv1_2", kh=3, kw=3, n_in=64, n_out=64, dh=1, dw=1)
     pool1 = mpool_op(conv1_2,   name="pool1",   kh=2, kw=2, dw=2, dh=2)
 
     # block 2 -- outputs 56x56x128
@@ -75,15 +75,20 @@ def inference(input_op):
     conv5_1 = conv_op(pool4,    name="conv5_1", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
     conv5_2 = conv_op(conv5_1,  name="conv5_2", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
     conv5_3 = conv_op(conv5_2,  name="conv5_3", kh=3, kw=3, n_in=512, n_out=512, dh=1, dw=1)
-    pool5 = mpool_op(conv8,     name="pool5",   kh=2, kw=2, dw=2, dh=2)
+    pool5 = mpool_op(conv5_3,   name="pool5",   kh=2, kw=2, dw=2, dh=2)
 
     # flatten
-    resh1 = tf.reshape(pool8, [-1, 512*7*7], name="resh1")
+    resh1 = tf.reshape(pool5, [-1, 512*7*7], name="resh1")
 
     # fully connected
-    fc6 = affine_op(resh1,      name="fc6", n_in=512*7*7, n_out=4096)
-    fc7 = affine_op(fc7,        name="fc7", n_in=4096, n_out=10)
-    fc8 = affine_op(fc8,        name="fc8", n_in=10, n_out=10)
+
+    fc6 = fc_op(resh1, name="fc6", n_in=512*7*7, n_out=4096)
+    fc6_drop = tf.nn.dropout(fc6, dropout_keep_prob, name="fc6_drop")
+
+    fc7 = fc_op(fc6_drop, name="fc7", n_in=4096, n_out=10)
+    fc7_drop = tf.nn.dropout(fc7, dropout_keep_prob, name="fc6_drop")
+
+    fc8 = fc_op(fc7_drop, name="fc8", n_in=10, n_out=10)
     return fc8
 
 
@@ -113,10 +118,12 @@ def train(lr=0.00001, max_step=1000):
         in_images = tf.placeholder("float", [batch_size, 32, 32, 3])
         images = tf.image.resize_images(in_images, 224, 224)
         labels = tf.placeholder("int32", [batch_size])
+        dropout_keep_prob = tf.placeholder("float")
+
 
         # Build a Graph that computes the logits predictions from the
         # inference model.
-        last_layer = inference(images)
+        last_layer = inference(images, dropout_keep_prob)
 
         # Add a simple objective so we can calculate the backward pass.
         objective = loss(last_layer, labels)
@@ -146,7 +153,8 @@ def train(lr=0.00001, max_step=1000):
                         [train_step, summaries, objective],
                         feed_dict = {
                             in_images: X,
-                            labels: Y
+                            labels: Y,
+                            dropout_keep_prob: 0.5
                         }
                     )
                     writer.add_summary(result[1], i)
