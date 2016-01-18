@@ -9,7 +9,7 @@ import tensorflow.python.platform
 import tensorflow as tf
 
 
-batch_size = 2
+batch_size = 8
 
 def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
     with tf.name_scope(name) as scope:
@@ -24,8 +24,8 @@ def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
 
 def affine_op(input_op, name, n_in, n_out):
     with tf.name_scope(name) as scope:
-        kernel = tf.Variable(tf.truncated_normal([n_in, n_out], dtype=tf.float32, stddev=1e-1),  name='weights')
-        biases = tf.Variable(tf.constant(0.0, shape=[n_out], dtype=tf.float32), name='biases')
+        kernel = tf.Variable(tf.truncated_normal([n_in, n_out], dtype=tf.float32, stddev=1e-1), trainable=True, name='weights')
+        biases = tf.Variable(tf.constant(0.0, shape=[n_out], dtype=tf.float32), trainable=True, name='biases')
         affine1 = tf.nn.relu_layer(input_op, kernel, biases, name=name)
         return affine1
 
@@ -101,6 +101,7 @@ def train(lr=0.0001, max_step=1000):
 
         # grab variables we want to log
         tf.scalar_summary("loss", objective)
+        tf.image_summary("images", images)
 
         summaries = tf.merge_all_summaries()
 
