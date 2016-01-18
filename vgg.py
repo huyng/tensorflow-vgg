@@ -118,8 +118,6 @@ def train(lr=0.00001, max_step=1000):
         # inference model.
         last_layer = inference(images)
 
-
-
         # Add a simple objective so we can calculate the backward pass.
         objective = loss(last_layer, labels)
         optimizer = tf.train.AdagradOptimizer(lr)
