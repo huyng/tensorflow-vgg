@@ -203,7 +203,7 @@ def train(lr=0.0001, max_step=5000*10):
                 if step % 10 == 0:
                     examples_per_sec = batch_size/duration
                     sec_per_batch = float(duration)
-                    format_str = '%s: step %d, loss = %.2f (%.1f examples/sec; %.3f sec/batch)'
+                    format_str = '%s: step %d, loss = %.4f (%.1f examples/sec; %.3f sec/batch)'
                     print(format_str % (datetime.now(), step, result[1], examples_per_sec, sec_per_batch))
 
                 if step % 100 == 0:
@@ -222,7 +222,7 @@ def train(lr=0.0001, max_step=5000*10):
                             labels: Y_tst,
                             dropout_keep_prob: 1.0
                         })
-                    print("%s tst accuracy is = %s" % (datetime.now(), float(correct_count)/num_tst_examples))
+                    print("%s tst accuracy = %.3f" % (datetime.now(), float(correct_count)/num_tst_examples))
 
 
 
