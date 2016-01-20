@@ -20,8 +20,8 @@ def get_cifar10(batch_size=16):
     tst_labels = tst_data["labels"]
     tst_pixels = tst_data["data"]
 
-    trn_set = batch_iterator(zip(trn_pixels, trn_labels), batch_size, batch_fn=lambda x: zip(*x))
-    tst_set = batch_iterator(zip(tst_pixels, tst_labels), batch_size, batch_fn=lambda x: zip(*x))
+    trn_set = batch_iterator(it.cycle(zip(trn_pixels, trn_labels)), batch_size, batch_fn=lambda x: zip(*x))
+    tst_set = (np.vstack(tst_pixels), np.array(tst_labels))
 
     return trn_set, tst_set
 
