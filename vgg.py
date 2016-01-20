@@ -161,6 +161,10 @@ def train(lr=0.00001, max_step=12000):
 
         # grab summary variables we want to log
         tf.scalar_summary("loss function", objective)
+<<<<<<< HEAD
+=======
+        # tf.scalar_summary("accuracy", accuracy)
+>>>>>>> 7209d5695164ef91e48e07154790ecd9ad418e7f
         tf.scalar_summary("avg loss function", ema.average(objective))
 
          # Create a saver.
