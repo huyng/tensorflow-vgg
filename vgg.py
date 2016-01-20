@@ -9,7 +9,7 @@ import tensorflow.python.platform
 import tensorflow as tf
 
 
-batch_size = 8
+batch_size = 10
 
 def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
     with tf.name_scope(name) as scope:
@@ -129,7 +129,7 @@ def evaluate(predictions, labels):
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
     return accuracy, total_correct
 
-def train(lr=0.00001, max_step=12000):
+def train(lr=0.0001, max_step=5000*10):
     """
     train model
 
@@ -196,7 +196,8 @@ def train(lr=0.00001, max_step=12000):
                 )
                 duration = time.time() - t0
 
-                if result[2] is np.NaN:
+                if np.isnan(result[1]):
+                    print("gradient vanished/exploded")
                     return
 
                 if step % 10 == 0:
@@ -208,16 +209,17 @@ def train(lr=0.00001, max_step=12000):
                 if step % 100 == 0:
                     writer.add_summary(result[2], step)
 
-                if step % 10 == 0:
+                if step % 1000 == 0:
                     print("%s: step %d, evaluating test set" % (datetime.now(), step))
                     correct_count = 0
                     num_tst_examples = tst[0].shape[0]
                     for tst_idx in range(0, num_tst_examples, batch_size):
                         X_tst = tst[0][tst_idx:np.min([tst_idx+batch_size, num_tst_examples]), :]
+                        X_tst = X_tst.reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
                         Y_tst = tst[1][tst_idx:np.min([tst_idx+batch_size, num_tst_examples])]
                         correct_count += total_correct.eval({
-                            in_images: X,
-                            labels: Y,
+                            in_images: X_tst,
+                            labels: Y_tst,
                             dropout_keep_prob: 1.0
                         })
                     print("%s tst accuracy is = %s" % (datetime.now(), float(correct_count)/num_tst_examples))
