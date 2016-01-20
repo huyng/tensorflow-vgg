@@ -151,7 +151,7 @@ def evaluation(logits, labels):
     correct = tf.nn.in_top_k(logits, labels, 1)
     # Return the number of true entries.
     total_correct = tf.reduce_sum(tf.cast(correct, tf.int32))
-    accuracy = tf.reduce_mean(tf.cast(correct, tf.int32))
+    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
     return accuracy
 
 def train(lr=0.00001, max_step=12000):
@@ -186,7 +186,7 @@ def train(lr=0.00001, max_step=12000):
 
         # grab summary variables we want to log
         tf.scalar_summary("loss function", objective)
-        tf.scalar_summary("accuracy", accuracy)
+        # tf.scalar_summary("accuracy", accuracy)
         tf.scalar_summary("avg loss function", ema.average(objective))
 
         summaries = tf.merge_all_summaries()
@@ -215,7 +215,7 @@ def train(lr=0.00001, max_step=12000):
                     }
                 )
                 writer.add_summary(result[1], i)
-                print "step:%s loss = %s" % (i, result[2])
+                print "step:%s loss = %s - acc = %s" % (i, result[2], result[3])
                 if result[2] is np.NaN:
                     return
 
