@@ -46,8 +46,6 @@ def loss_op(logits, labels, batch_size):
     return loss
 
 
-<<<<<<< HEAD
-
 
 def evaluate_op(predictions, labels):
     """Evaluate the quality of the predictions at predicting the label.
@@ -71,7 +69,7 @@ def evaluate_op(predictions, labels):
     accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
     return accuracy, total_correct
 
-def inference_vgg16_op(input_op, input_shape=224, training=False):
+def inference_op(input_op, training=False):
 
     dropout_keep_prob = 0.5 if training else 1.0
     # assume input_op shape is 224x224x3
@@ -87,26 +85,26 @@ def inference_vgg16_op(input_op, input_shape=224, training=False):
     pool2 = mpool_op(conv2_2,   name="pool2",   kh=4, kw=4, dh=4, dw=4)
 
     # # block 3 -- outputs 28x28x256
-    # conv3_1 = conv_op(pool2,    name="conv3_1", kh=3, kw=3, n_out=256, dh=1, dw=1)
-    # conv3_2 = conv_op(conv3_1,  name="conv3_2", kh=3, kw=3, n_out=256, dh=1, dw=1)
-    # pool3 = mpool_op(conv3_2,   name="pool3",   kh=2, kw=2, dh=2, dw=2)
-    #
-    # # block 4 -- outputs 14x14x512
-    # conv4_1 = conv_op(pool3,    name="conv4_1", kh=3, kw=3, n_out=512, dh=1, dw=1)
-    # conv4_2 = conv_op(conv4_1,  name="conv4_2", kh=3, kw=3, n_out=512, dh=1, dw=1)
-    # conv4_3 = conv_op(conv4_2,  name="conv4_2", kh=3, kw=3, n_out=512, dh=1, dw=1)
-    # pool4 = mpool_op(conv4_3,   name="pool4",   kh=2, kw=2, dh=2, dw=2)
-    #
-    # # block 5 -- outputs 7x7x512
-    # conv5_1 = conv_op(pool4,    name="conv5_1", kh=3, kw=3, n_out=512, dh=1, dw=1)
-    # conv5_2 = conv_op(conv5_1,  name="conv5_2", kh=3, kw=3, n_out=512, dh=1, dw=1)
-    # conv5_3 = conv_op(conv5_2,  name="conv5_3", kh=3, kw=3, n_out=512, dh=1, dw=1)
-    # pool5 = mpool_op(conv5_3,   name="pool5",   kh=2, kw=2, dw=2, dh=2)
+    conv3_1 = conv_op(pool2,    name="conv3_1", kh=3, kw=3, n_out=256, dh=1, dw=1)
+    conv3_2 = conv_op(conv3_1,  name="conv3_2", kh=3, kw=3, n_out=256, dh=1, dw=1)
+    pool3 = mpool_op(conv3_2,   name="pool3",   kh=2, kw=2, dh=2, dw=2)
+
+    # block 4 -- outputs 14x14x512
+    conv4_1 = conv_op(pool3,    name="conv4_1", kh=3, kw=3, n_out=512, dh=1, dw=1)
+    conv4_2 = conv_op(conv4_1,  name="conv4_2", kh=3, kw=3, n_out=512, dh=1, dw=1)
+    conv4_3 = conv_op(conv4_2,  name="conv4_2", kh=3, kw=3, n_out=512, dh=1, dw=1)
+    pool4 = mpool_op(conv4_3,   name="pool4",   kh=2, kw=2, dh=2, dw=2)
+
+    # block 5 -- outputs 7x7x512
+    conv5_1 = conv_op(pool4,    name="conv5_1", kh=3, kw=3, n_out=512, dh=1, dw=1)
+    conv5_2 = conv_op(conv5_1,  name="conv5_2", kh=3, kw=3, n_out=512, dh=1, dw=1)
+    conv5_3 = conv_op(conv5_2,  name="conv5_3", kh=3, kw=3, n_out=512, dh=1, dw=1)
+    pool5 = mpool_op(conv5_3,   name="pool5",   kh=2, kw=2, dw=2, dh=2)
 
     # flatten
-    shp = pool2.get_shape()
+    shp = pool5.get_shape()
     flattened_shape = shp[1].value * shp[2].value * shp[3].value
-    resh1 = tf.reshape(pool2, [-1, flattened_shape], name="resh1")
+    resh1 = tf.reshape(pool5, [-1, flattened_shape], name="resh1")
 
     # fully connected
     fc6 = fc_op(resh1, name="fc6", n_out=4096)
@@ -116,4 +114,6 @@ def inference_vgg16_op(input_op, input_shape=224, training=False):
     fc7_drop = tf.nn.dropout(fc7, dropout_keep_prob, name="fc7_drop")
 
     fc8 = fc_op(fc7_drop, name="fc8", n_out=10)
-    return fc8
+    softmax = tf.nn.softmax(fc8)
+    predictions = tf.argmax(softmax, 1)
+    return predictions, softmax, fc8

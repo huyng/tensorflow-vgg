@@ -16,11 +16,12 @@ def train(trn_generator,
     with tf.Graph().as_default():
 
         raw_images = tf.placeholder("float", [batch_size, 32, 32, 3])
-        images = tf.image.resize_images(raw_images, 64, 64)
+        images = tf.image.resize_images(raw_images, 224, 224)
+        print images.get_shape()
         labels = tf.placeholder("int32", [batch_size])
-        predictions = model.inference_op(images, input_shape=64, training=True)
-        objective = model.loss_op(predictions, labels, batch_size)
-        accuracy, total_correct = model.evaluate_op(predictions, labels)
+        predictions, softmax, logits = model.inference_op(images, training=True)
+        objective = model.loss_op(logits, labels, batch_size)
+        accuracy, total_correct = model.evaluate_op(softmax, labels)
         optimizer = tf.train.GradientDescentOptimizer(lr)
         global_step = tf.Variable(0, name="global_step", trainable=False)
         train_step = optimizer.minimize(objective, global_step=global_step)
@@ -40,9 +41,10 @@ def train(trn_generator,
                     X = np.array(batch[0])
                     Y = np.array(batch[1])
 
+
                     t0 = time.time()
                     result = sess.run(
-                        [train_step, objective, accuracy],
+                        [train_step, objective, accuracy, predictions],
                         feed_dict = {
                             raw_images: X,
                             labels: Y,
@@ -56,6 +58,7 @@ def train(trn_generator,
                     # print debugging info
                     print("epoch:%5d, step:%5d, trn_loss: %s, trn_acc: %s," % (epoch, step, trn_loss, trn_acc))
                     training_log.write("%s,%s\n" % (trn_loss, trn_acc))
+                    # print(Y) print(result[3])
 
 
 
