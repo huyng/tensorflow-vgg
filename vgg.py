@@ -1,5 +1,3 @@
-# Adapted from https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/models/image/cifar10/cifar10.py
-
 from datetime import datetime
 import math
 import time
@@ -8,8 +6,6 @@ import dataset
 import tensorflow.python.platform
 import tensorflow as tf
 
-
-batch_size = 10
 
 def conv_op(input_op, name, kw, kh, n_in, n_out, dw, dh):
     with tf.name_scope(name) as scope:
@@ -36,7 +32,7 @@ def mpool_op(input_op, name, kh, kw, dh, dw):
                           padding='VALID',
                           name=name)
 
-def loss(logits, labels):
+def loss_op(logits, labels, batch_size):
     labels = tf.expand_dims(labels, 1)
     indices = tf.expand_dims(tf.range(0, batch_size, 1), 1)
     concated = tf.concat(1, [indices, labels])
@@ -46,7 +42,33 @@ def loss(logits, labels):
     return loss
 
 
-def inference_vgg(input_op, dropout_keep_prob, input_shape=224):
+
+
+def evaluate_op(predictions, labels):
+    """Evaluate the quality of the predictions at predicting the label.
+
+    Args:
+        logits: Logits tensor, float - [batch_size, NUM_CLASSES].
+        labels: Labels tensor, int32 - [batch_size], with values in the range [0, NUM_CLASSES).
+    Returns:
+        A scalar int32 tensor with the number of examples (out of batch_size)
+        that were predicted correctly.
+
+    """
+    # For a classifier model, we can use the in_top_k Op.
+    # It returns a bool tensor with shape [batch_size] that is true for
+    # the examples where the label's is was in the top k (here k=1)
+    # of all logits for that example.
+    correct = tf.nn.in_top_k(predictions, labels, 1)
+
+    # Return the number of true entries.
+    total_correct = tf.reduce_sum(tf.cast(correct, tf.int32))
+    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
+    return accuracy, total_correct
+
+def inference_op(input_op, input_shape=224, training=False):
+
+    dropout_keep_prob = 0.5 if training else 1.0
 
     # assume input_op shape is 224x224x3
 
@@ -90,147 +112,3 @@ def inference_vgg(input_op, dropout_keep_prob, input_shape=224):
 
     fc8 = fc_op(fc7_drop, name="fc8", n_in=10, n_out=10)
     return fc8
-
-
-def random_test_input():
-    """
-    this generates random test input, useful for debugging
-    """
-    sz = 224
-    channels = 3
-    init_val = tf.random_normal(
-        (batch_size, sz, sz, channels),
-        dtype=tf.float32,
-        stddev=1
-    )
-    images = tf.Variable(init_val)
-    labels = tf.Variable(tf.ones([batch_size], dtype=tf.int32))
-    return images, labels
-
-def evaluate(predictions, labels):
-    """Evaluate the quality of the predictions at predicting the label.
-
-    Args:
-        logits: Logits tensor, float - [batch_size, NUM_CLASSES].
-        labels: Labels tensor, int32 - [batch_size], with values in the range [0, NUM_CLASSES).
-    Returns:
-        A scalar int32 tensor with the number of examples (out of batch_size)
-        that were predicted correctly.
-
-    """
-    # For a classifier model, we can use the in_top_k Op.
-    # It returns a bool tensor with shape [batch_size] that is true for
-    # the examples where the label's is was in the top k (here k=1)
-    # of all logits for that example.
-    correct = tf.nn.in_top_k(predictions, labels, 1)
-
-    # Return the number of true entries.
-    total_correct = tf.reduce_sum(tf.cast(correct, tf.int32))
-    accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
-    return accuracy, total_correct
-
-def train(lr=0.0001, max_step=5000*10):
-    """
-    train model
-
-    :param lr:  This is the learning rate
-    """
-    with tf.Graph().as_default():
-
-        in_images = tf.placeholder("float", [batch_size, 32, 32, 3])
-        images = tf.image.resize_images(in_images, 64, 64)
-        labels = tf.placeholder("int32", [batch_size])
-        dropout_keep_prob = tf.placeholder("float")
-
-
-        # Build a Graph that computes the logits predictions from the
-        # inference model.
-        # last_layer = inference_vgg(images, dropout_keep_prob)
-        last_layer = inference_vgg(images, dropout_keep_prob, input_shape=64)
-
-        # Add a simple objective so we can calculate the backward pass.
-        objective = loss(last_layer, labels)
-        accuracy, total_correct = evaluate(last_layer, labels)
-        optimizer = tf.train.AdagradOptimizer(lr)
-        global_step = tf.Variable(0, name="global_step", trainable=False)
-        train_step = optimizer.minimize(objective, global_step=global_step)
-
-        ema = tf.train.ExponentialMovingAverage(0.999)
-        maintain_averages_op = ema.apply([objective])
-
-
-        # grab summary variables we want to log
-        tf.scalar_summary("loss function", objective)
-        # tf.scalar_summary("accuracy", accuracy)
-        tf.scalar_summary("avg loss function", ema.average(objective))
-
-         # Create a saver.
-        saver = tf.train.Saver(tf.all_variables())
-
-
-        summary_op = tf.merge_all_summaries()
-
-        # Build an initialization operation.
-        initializer = tf.initialize_all_variables()
-
-        # Start running operations on the Graph.
-        with tf.Session() as sess:
-            sess.run(initializer)
-            writer = tf.train.SummaryWriter("train_logs", graph_def=sess.graph_def)
-            trn, tst = dataset.get_cifar10(batch_size)
-            for step in range(max_step):
-
-                # get batch and format data
-                batch = trn.next()
-                X = np.vstack(batch[0]).reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
-                Y = np.array(batch[1])
-
-                t0 = time.time()
-                result = sess.run(
-                    [train_step, objective, summary_op, accuracy, maintain_averages_op],
-                    feed_dict = {
-                        in_images: X,
-                        labels: Y,
-                        dropout_keep_prob: 1.0
-                    }
-                )
-                duration = time.time() - t0
-
-                if np.isnan(result[1]):
-                    print("gradient vanished/exploded")
-                    return
-
-                if step % 10 == 0:
-                    examples_per_sec = batch_size/duration
-                    sec_per_batch = float(duration)
-                    format_str = '%s: step %d, loss = %.2f (%.1f examples/sec; %.3f sec/batch)'
-                    print(format_str % (datetime.now(), step, result[1], examples_per_sec, sec_per_batch))
-
-                if step % 100 == 0:
-                    writer.add_summary(result[2], step)
-
-                if step % 1000 == 0:
-                    print("%s: step %d, evaluating test set" % (datetime.now(), step))
-                    correct_count = 0
-                    num_tst_examples = tst[0].shape[0]
-                    for tst_idx in range(0, num_tst_examples, batch_size):
-                        X_tst = tst[0][tst_idx:np.min([tst_idx+batch_size, num_tst_examples]), :]
-                        X_tst = X_tst.reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)
-                        Y_tst = tst[1][tst_idx:np.min([tst_idx+batch_size, num_tst_examples])]
-                        correct_count += total_correct.eval({
-                            in_images: X_tst,
-                            labels: Y_tst,
-                            dropout_keep_prob: 1.0
-                        })
-                    print("%s tst accuracy is = %s" % (datetime.now(), float(correct_count)/num_tst_examples))
-
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    train()
