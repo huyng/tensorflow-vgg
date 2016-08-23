@@ -146,7 +146,7 @@ def inference_cifar10_vgg(input_op, training=False):
     # block 4 -- outputs 14x14x512
     conv4_1 = tf.nn.dropout(conv_op(pool3,    name="conv4_1", kh=3, kw=3, n_out=128, dh=1, dw=1), dropout_keep_prob)
     conv4_2 = tf.nn.dropout(conv_op(conv4_1,  name="conv4_2", kh=3, kw=3, n_out=128, dh=1, dw=1), dropout_keep_prob)
-    conv4_3 = tf.nn.dropout(conv_op(conv4_2,  name="conv4_2", kh=3, kw=3, n_out=128, dh=1, dw=1), dropout_keep_prob)
+    conv4_3 = tf.nn.dropout(conv_op(conv4_2,  name="conv4_3", kh=3, kw=3, n_out=128, dh=1, dw=1), dropout_keep_prob)
     pool4 = mpool_op(conv4_3,   name="pool4",   kh=2, kw=2, dh=2, dw=2)
 
 
