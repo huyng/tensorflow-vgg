@@ -7,7 +7,7 @@ import time
 def train(trn_generator,
           val_generator,
           steps_per_epoch,
-          lr=0.1,
+          lr=0.01,
           nb_epochs=10,
           batch_size=12,
           training_log_path="train_log.csv"):
@@ -16,13 +16,15 @@ def train(trn_generator,
     with tf.Graph().as_default():
 
         raw_images = tf.placeholder("float", [batch_size, 32, 32, 3])
-        images = tf.image.resize_images(raw_images, 224, 224)
+        images = tf.image.resize_images(raw_images, 128, 128)
         print images.get_shape()
         labels = tf.placeholder("int32", [batch_size])
-        predictions, softmax, logits = model.inference_op(images, training=True)
+        predictions, softmax, logits = model.inference_cifar10_vgg(images, training=True)
+        # predictions, softmax, logits = model.inference_op(images, training=True)
         objective = model.loss_op(logits, labels, batch_size)
         accuracy, total_correct = model.evaluate_op(softmax, labels)
         optimizer = tf.train.GradientDescentOptimizer(lr)
+        # optimizer = tf.train.AdamOptimizer(lr)
         global_step = tf.Variable(0, name="global_step", trainable=False)
         train_step = optimizer.minimize(objective, global_step=global_step)
 
@@ -58,7 +60,9 @@ def train(trn_generator,
                     # print debugging info
                     print("epoch:%5d, step:%5d, trn_loss: %s, trn_acc: %s," % (epoch, step, trn_loss, trn_acc))
                     training_log.write("%s,%s\n" % (trn_loss, trn_acc))
-                    # print(Y) print(result[3])
+                    if trn_acc > .8:
+                        print(Y) 
+                        print(result[3])
 
 
 
@@ -85,6 +89,6 @@ def train(trn_generator,
 
 if __name__ == '__main__':
     import dataset
-    batch_size = 12
+    batch_size = 20
     trn_generator, val_generator = dataset.get_cifar10(batch_size=batch_size)
     train(trn_generator, val_generator, steps_per_epoch=50000/batch_size, batch_size=batch_size)

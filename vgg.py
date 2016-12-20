@@ -9,6 +9,8 @@ import layers as L
 
 
 def build(input_tensor, n_classes=1000):
+    # assuming 224x224x3 input_tensor
+
     # block 1 -- outputs 112x112x64
     net = L.conv(input_tensor, name="conv1_1", kh=3, kw=3, n_out=64)
     net = L.conv(net, name="conv1_2", kh=3, kw=3, n_out=64)
@@ -47,9 +49,6 @@ def build(input_tensor, n_classes=1000):
     net = tf.nn.softmax(net, name="prob")
     net = tf.argmax(net, 1)
     return net
-
-
-
 
 if __name__ == '__main__':
     x = tf.placeholder(tf.float32, [10, 224, 224, 3])
