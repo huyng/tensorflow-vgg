@@ -10,10 +10,8 @@ import tensorflow as tf
 def conv(input_op, name, kw, kh, n_out, dw=1, dh=1):
     n_in = input_op.get_shape()[-1].value
     with tf.variable_scope(name):
-        weights = tf.get_variable('weights', [kh, kw, n_in, n_out],
-                                  tf.float32, tf.truncated_normal_initializer())
-        biases = tf.get_variable("bias", [n_out],
-                                 tf.float32, tf.constant_initializer(0.0))
+        weights = tf.get_variable('weights', [kh, kw, n_in, n_out], tf.float32, tf.truncated_normal_initializer())
+        biases = tf.get_variable("bias", [n_out], tf.float32, tf.constant_initializer(0.0))
         conv = tf.nn.conv2d(input_op, weights, (1, dh, dw, 1), padding='SAME')
         activation = tf.nn.relu(tf.nn.bias_add(conv, biases))
         return activation
@@ -22,10 +20,8 @@ def conv(input_op, name, kw, kh, n_out, dw=1, dh=1):
 def fully_connected(input_op, name, n_out, activation_fn=tf.nn.relu):
     n_in = input_op.get_shape()[-1].value
     with tf.variable_scope(name):
-        weights = tf.get_variable('weights',
-                                  [n_in, n_out], tf.float32, tf.truncated_normal_initializer())
-        biases = tf.get_variable("bias",
-                                 [n_out], tf.float32, tf.constant_initializer(0.0))
+        weights = tf.get_variable('weights', [n_in, n_out], tf.float32, tf.truncated_normal_initializer())
+        biases = tf.get_variable("bias", [n_out], tf.float32, tf.constant_initializer(0.0))
         logits = tf.nn.bias_add(tf.matmul(input_op, weights), biases)
         return activation_fn(logits)
 
@@ -38,15 +34,9 @@ def pool(input_op, name, kh, kw, dh, dw):
                           name=name)
 
 
-def loss_op(logits, labels, batch_size):
-    labels = tf.expand_dims(labels, 1)
-    indices = tf.expand_dims(tf.range(0, batch_size, 1), 1)
-    concated = tf.concat(1, [indices, labels])
-    onehot_labels = tf.sparse_to_dense(
-        concated, tf.pack([batch_size, 10]), 1.0, 0.0)
-    cross_entropy = tf.nn.softmax_cross_entropy_with_logits(
-        logits, onehot_labels, name='xentropy')
-    loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
+def loss(logits, onehot_labels):
+    xentropy = tf.nn.softmax_cross_entropy_with_logits(logits, onehot_labels, name='xentropy')
+    loss = tf.reduce_mean(xentropy, name='loss')
     return loss
 
 

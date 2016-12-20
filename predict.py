@@ -2,6 +2,7 @@ from vgg import inference_vgg, batch_size
 import tensorflow as tf
 import numpy as np
 
+
 def predict(img):
     X = np.zeros((batch_size, 32,32, 3))
     X[0] = img

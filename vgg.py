@@ -46,8 +46,6 @@ def build(input_tensor, n_classes=1000):
     net = L.fully_connected(net, name="fc6", n_out=4096)
     net = L.fully_connected(net, name="fc7", n_out=4096)
     net = L.fully_connected(net, name="fc8", n_out=n_classes)
-    net = tf.nn.softmax(net, name="prob")
-    net = tf.argmax(net, 1)
     return net
 
 if __name__ == '__main__':

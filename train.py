@@ -10,21 +10,19 @@ def train(trn_generator,
           lr=0.01,
           nb_epochs=10,
           batch_size=12,
-          training_log_path="train_log.csv"):
+          training_log_path="train_log.csv",
+          num_classes=1000):
 
+    G = tf.Graph()
+    with G.as_default():
 
-    with tf.Graph().as_default():
-
-        raw_images = tf.placeholder("float", [batch_size, 32, 32, 3])
-        images = tf.image.resize_images(raw_images, 128, 128)
-        print images.get_shape()
+        raw_images = tf.placeholder(tf.float32, [batch_size, 224, 224, 3])
+        images = tf.image.resize_images(raw_images, [128, 128])
         labels = tf.placeholder("int32", [batch_size])
-        predictions, softmax, logits = model.inference_cifar10_vgg(images, training=True)
-        # predictions, softmax, logits = model.inference_op(images, training=True)
-        objective = model.loss_op(logits, labels, batch_size)
+        net = model.build(images)
+        objective = model.loss(logits, tf.one_hot(labels, num_classes))
         accuracy, total_correct = model.evaluate_op(softmax, labels)
-        optimizer = tf.train.GradientDescentOptimizer(lr)
-        # optimizer = tf.train.AdamOptimizer(lr)
+        optimizer = tf.train.AdamOptimizer(lr)
         global_step = tf.Variable(0, name="global_step", trainable=False)
         train_step = optimizer.minimize(objective, global_step=global_step)
 
@@ -47,7 +45,7 @@ def train(trn_generator,
                     t0 = time.time()
                     result = sess.run(
                         [train_step, objective, accuracy, predictions],
-                        feed_dict = {
+                        feed_dict={
                             raw_images: X,
                             labels: Y,
                         }
@@ -58,10 +56,10 @@ def train(trn_generator,
 
 
                     # print debugging info
-                    print("epoch:%5d, step:%5d, trn_loss: %s, trn_acc: %s," % (epoch, step, trn_loss, trn_acc))
+                    print("epoch:%5d, step:%5d, duration:%5d, trn_loss: %s, trn_acc: %s," % (epoch, duration, step, trn_loss, trn_acc))
                     training_log.write("%s,%s\n" % (trn_loss, trn_acc))
                     if trn_acc > .8:
-                        print(Y) 
+                        print(Y)
                         print(result[3])
 
 
