@@ -1,6 +1,6 @@
 import sys
 import tensorflow as tf
-import tfutils
+import tf_tools
 import numpy as np
 import vgg
 from skimage.transform import resize
@@ -23,5 +23,5 @@ if __name__ == '__main__':
     im = imread(sys.argv[1])
     sess = tf.Session(graph=G)
     with sess.as_default():
-        tfutils.load_weights(G, "weights.30.npz")
+        tf_tools.load_weights(G, "weights.30.npz")
         print predict(im)

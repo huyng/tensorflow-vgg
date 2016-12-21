@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 import time
 import layers as L
-import tfutils
+import tf_tools
 import dataset
 
 
@@ -70,10 +70,10 @@ with sess.as_default():
                 inputs = [imraw, labels]
                 args = [X_vld, Y_vld]
                 ops = [error_top1, error_top5, loss]
-                results = tfutils.run_iterative(ops, inputs, args, batch_size=batch_size)
+                results = tf_tools.run_iterative(ops, inputs, args, batch_size=batch_size)
                 results = np.mean(results, axis=0)
                 print("VLD step:%-5d error_top1: %.4f, error_top5: %.4f, loss:%s" % (iteration, results[0], results[1], results[2]))
 
             if step % 1000 == 0:
                 print("saving check point")
-                tfutils.save_weights(G, "weights.%s" % iteration)
+                tf_tools.save_weights(G, "weights.%s" % iteration)
