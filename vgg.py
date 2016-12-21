@@ -15,7 +15,7 @@ def build(input_tensor, n_classes=1000, rgb_mean=None, training=True):
     if rgb_mean is None:
         rgb_mean = np.array([116.779, 123.68, 103.939], dtype=np.float32)
     mu = tf.constant(rgb_mean, name="rgb_mean")
-    keep_prob = 0.5 if training else 1.0
+    keep_prob = 0.5
 
     # subtract image mean
     net = tf.sub(input_tensor, mu, name="input_mean_centered")
@@ -23,12 +23,12 @@ def build(input_tensor, n_classes=1000, rgb_mean=None, training=True):
     # block 1 -- outputs 112x112x64
     net = L.conv(net, name="conv1_1", kh=3, kw=3, n_out=64)
     net = L.conv(net, name="conv1_2", kh=3, kw=3, n_out=64)
-    net = L.pool(net, name="pool1", kh=4, kw=4, dw=4, dh=4)
+    net = L.pool(net, name="pool1", kh=2, kw=2, dw=2, dh=2)
 
     # block 2 -- outputs 56x56x128
     net = L.conv(net, name="conv2_1", kh=3, kw=3, n_out=128)
     net = L.conv(net, name="conv2_2", kh=3, kw=3, n_out=128)
-    net = L.pool(net, name="pool2", kh=4, kw=4, dh=4, dw=4)
+    net = L.pool(net, name="pool2", kh=2, kw=2, dh=2, dw=2)
 
     # # block 3 -- outputs 28x28x256
     net = L.conv(net, name="conv3_1", kh=3, kw=3, n_out=256)
@@ -54,7 +54,7 @@ def build(input_tensor, n_classes=1000, rgb_mean=None, training=True):
     # fully connected
     net = L.fully_connected(net, name="fc6", n_out=4096)
     net = tf.nn.dropout(net, keep_prob)
-    net = L.fully_connected(net, name="fc7", n_out=512)
+    net = L.fully_connected(net, name="fc7", n_out=4096)
     net = tf.nn.dropout(net, keep_prob)
     net = L.fully_connected(net, name="fc8", n_out=n_classes)
     return net

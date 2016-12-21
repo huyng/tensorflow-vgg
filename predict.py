@@ -23,5 +23,5 @@ if __name__ == '__main__':
     im = imread(sys.argv[1])
     sess = tf.Session(graph=G)
     with sess.as_default():
-        tfutils.load_weights(G, "weights.40.npz")
+        tfutils.load_weights(G, "weights.30.npz")
         print predict(im)

@@ -4,8 +4,9 @@ import tensorflow as tf
 def save_weights(graph, fpath):
     sess = tf.get_default_session()
     variables = graph.get_collection("variables")
-    kwargs = dict((v.name, sess.run(v)) for v in variables)
-    np.savez_compressed(fpath, **kwargs)
+    variable_names = [v.name for v in variables]
+    kwargs = dict(zip(variable_names, sess.run(variables)))
+    np.savez(fpath, **kwargs)
 
 def load_weights(graph, fpath):
     sess = tf.get_default_session()
