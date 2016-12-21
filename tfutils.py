@@ -1,11 +1,22 @@
+import numpy as np
 import tensorflow as tf
 
-def save_weights(net, fpath):
-    pass
+def save_weights(graph, fpath):
+    sess = tf.get_default_session()
+    variables = graph.get_collection("variables")
+    kwargs = dict((v.name, sess.run(v)) for v in variables)
+    np.savez_compressed(fpath, **kwargs)
 
-def load_weights(net, fpath):
-    pass
-
+def load_weights(graph, fpath):
+    sess = tf.get_default_session()
+    variables = graph.get_collection("variables")
+    data = np.load(fpath)
+    for v in variables:
+        if v.name not in data:
+            print("could not load data for variable='%s'" % v.name)
+            continue
+        print("assigning %s" % v.name)
+        sess.run(v.assign(data[v.name]))
 
 def run_iterative(ops, inputs, args, batch_size):
     """

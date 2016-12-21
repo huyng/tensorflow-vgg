@@ -44,18 +44,6 @@ def get_cifar10(batch_size=16):
     print("-- trn shape = %s" % list(trn_pixels.shape))
     print("-- tst shape = %s" % list(tst_pixels.shape))
 
-    print("-- computing mean & stddev for cifar10 ...")
-    mu = np.mean(trn_pixels, axis=(0,2,3))
-    std = np.std(trn_pixels, axis=(0,2,3))
-    print("-- cifar10 mu  = %s" % mu)
-    print("-- cifar10 std = %s" % std)
-    print("-- whitening cifar10 pixels")
-    trn_pixels[:, :, :, :] -= mu.reshape(1, 3, 1, 1)
-    trn_pixels[:, :, :, :] /= std.reshape(1, 3, 1, 1)
-
-    tst_pixels[:, :, :, :] -= mu.reshape(1, 3, 1, 1)
-    tst_pixels[:, :, :, :] /= std.reshape(1, 3, 1, 1)
-
     # transpose to tensorflow's bhwc order assuming bchw order
     trn_pixels = trn_pixels.transpose(0, 2, 3, 1)
     tst_pixels = tst_pixels.transpose(0, 2, 3, 1)

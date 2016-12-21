@@ -1,23 +1,27 @@
-from vgg import inference_vgg, batch_size
+import sys
 import tensorflow as tf
+import tfutils
 import numpy as np
+import vgg
+from skimage.transform import resize
+from skimage.io import imread
 
+G = tf.Graph()
+with G.as_default():
+    images = tf.placeholder("float", [1, 224, 224, 3])
+    logits = vgg.build(images, n_classes=10, training=False)
+    probs = tf.nn.softmax(logits)
 
-def predict(img):
-    X = np.zeros((batch_size, 32,32, 3))
-    X[0] = img
-    with tf.Graph().as_default():
-        in_images = tf.placeholder("float", [batch_size, 32, 32, 3])
-        images = tf.image.resize_images(in_images, 64, 64)
-        inference_op = inference_vgg(images, dropout_keep_prob=tf.constant(1.0, dtype=tf.float32), input_shape=64)
-        saver = tf.train.Saver()
-        with tf.Session() as sess:
-            saver.restore(sess, "checkpoints/model.ckpt")
-            Y = sess.run(inference_op, feed_dict={in_images: X})
-            return Y[0]
+def predict(im):
+    if im.shape != (224, 224, 3):
+        im = resize(im, (224, 224))
+    im = np.expand_dims(im, 0)
+    sess = tf.get_default_session()
+    return sess.run(probs, {images: im})
 
 if __name__ == '__main__':
-    import dataset
-    trn, tst = dataset.get_cifar10(10)
-    d = tst[11][1].reshape(3,32,32).transpose(1,2,0)
-    print predict(d)
+    im = imread(sys.argv[1])
+    sess = tf.Session(graph=G)
+    with sess.as_default():
+        tfutils.load_weights(G, "weights.40.npz")
+        print predict(im)

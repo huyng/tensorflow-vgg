@@ -8,11 +8,20 @@ import tensorflow as tf
 import layers as L
 
 
-def build(input_tensor, n_classes=1000):
+def build(input_tensor, n_classes=1000, rgb_mean=None, training=True):
     # assuming 224x224x3 input_tensor
 
+    # define image mean
+    if rgb_mean is None:
+        rgb_mean = np.array([116.779, 123.68, 103.939], dtype=np.float32)
+    mu = tf.constant(rgb_mean, name="rgb_mean")
+    keep_prob = 0.5 if training else 1.0
+
+    # subtract image mean
+    net = tf.sub(input_tensor, mu, name="input_mean_centered")
+
     # block 1 -- outputs 112x112x64
-    net = L.conv(input_tensor, name="conv1_1", kh=3, kw=3, n_out=64)
+    net = L.conv(net, name="conv1_1", kh=3, kw=3, n_out=64)
     net = L.conv(net, name="conv1_2", kh=3, kw=3, n_out=64)
     net = L.pool(net, name="pool1", kh=4, kw=4, dw=4, dh=4)
 
@@ -44,7 +53,9 @@ def build(input_tensor, n_classes=1000):
 
     # fully connected
     net = L.fully_connected(net, name="fc6", n_out=4096)
-    net = L.fully_connected(net, name="fc7", n_out=4096)
+    net = tf.nn.dropout(net, keep_prob)
+    net = L.fully_connected(net, name="fc7", n_out=512)
+    net = tf.nn.dropout(net, keep_prob)
     net = L.fully_connected(net, name="fc8", n_out=n_classes)
     return net
 
