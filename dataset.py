@@ -1,8 +1,9 @@
 import itertools as it
 import numpy as np
+import tensorflow as tf
 
 
-def random_test_input():
+def random_test_input(batch_size=16):
     """
     this generates random test input, useful for debugging
     """
@@ -40,15 +41,15 @@ def get_cifar10(batch_size=16):
     tst_pixels = tst_data["data"]
     tst_pixels = tst_pixels.reshape(-1, 3, 32, 32).astype(np.float32)
 
-    print("trn.shape=%s tst.shape=%s" % (trn_pixels.shape, tst_pixels.shape))
+    print("-- trn shape = %s" % list(trn_pixels.shape))
+    print("-- tst shape = %s" % list(tst_pixels.shape))
 
-    print("computing mean & stddev for cifar10 ...")
+    print("-- computing mean & stddev for cifar10 ...")
     mu = np.mean(trn_pixels, axis=(0,2,3))
     std = np.std(trn_pixels, axis=(0,2,3))
-    print("cifar10 mu  = %s" % mu)
-    print("cifar10 std = %s" % std)
-    print("whitening cifar10 pixels ... ")
-
+    print("-- cifar10 mu  = %s" % mu)
+    print("-- cifar10 std = %s" % std)
+    print("-- whitening cifar10 pixels")
     trn_pixels[:, :, :, :] -= mu.reshape(1, 3, 1, 1)
     trn_pixels[:, :, :, :] /= std.reshape(1, 3, 1, 1)
 
@@ -60,7 +61,7 @@ def get_cifar10(batch_size=16):
     tst_pixels = tst_pixels.transpose(0, 2, 3, 1)
 
     trn_set = batch_iterator(it.cycle(zip(trn_pixels, trn_labels)), batch_size, cycle=True, batch_fn=lambda x: zip(*x))
-    tst_set = (np.vstack(tst_pixels), np.array(tst_labels))
+    tst_set = (tst_pixels, np.array(tst_labels))
 
     return trn_set, tst_set
 
