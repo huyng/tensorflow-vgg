@@ -4,6 +4,7 @@ Re-implementation of VGG Network in tensorflow
 # setup
 
 ```
+pip install skimage
 pip install skdata
 pip install tensorflow
 ```
