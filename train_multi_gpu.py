@@ -74,19 +74,20 @@ def train(train_data_generator):
     # ==================
     config_proto = tf.ConfigProto(allow_soft_placement=True, log_device_placement=False)
     sess = tf.Session(graph=G, config=config_proto)
-    sess.run(init)
-    tf.train.start_queue_runners(sess=sess)
-    num_batches_per_epoch = num_samples_per_epoch // (batch_size * num_gpus)
-    for step in range(num_batches_per_epoch * num_epochs):
-        data_batch, label_batch = train_data_generator.next()
-        inputs = {data: data_batch, labels: label_batch}
-        results = sess.run([train_step, loss], inputs)
-        print("step:%s loss:%s" % (step, results[1]))
+    with sess.as_default():
+        sess.run(init)
+        tf.train.start_queue_runners(sess=sess)
+        num_batches_per_epoch = num_samples_per_epoch // (batch_size * num_gpus)
+        for step in range(num_batches_per_epoch * num_epochs):
+            data_batch, label_batch = train_data_generator.next()
+            inputs = {data: data_batch, labels: label_batch}
+            results = sess.run([train_step, loss], inputs)
+            print("step:%s loss:%s" % (step, results[1]))
 
-        # Save the model checkpoint after each epoch
-        if (step > 0) and (step % num_batches_per_epoch == 0 or (step + 1) == num_batches_per_epoch * num_epochs):
-            checkpoint_path = pth.join(checkpoint_dir, 'model.ckpt')
-            saver.save(sess, checkpoint_path, global_step=step)
+            # Save the model checkpoint after each epoch
+            if (step > 0) and (step % num_batches_per_epoch == 0 or (step + 1) == num_batches_per_epoch * num_epochs):
+                checkpoint_path = pth.join(checkpoint_dir, 'model.ckpt')
+                saver.save(sess, checkpoint_path, global_step=step)
 
 
 def main(argv=None):
