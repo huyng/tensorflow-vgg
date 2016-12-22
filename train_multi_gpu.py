@@ -5,7 +5,6 @@ import time
 
 import numpy as np
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
 import json
 import vgg
 import layers as L
@@ -100,15 +99,6 @@ def main(argv=None):
     if not pth.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
 
-    print("----------------------------------------------------\n")
-    print("Experiment Configuration\n")
-    print("----------------------------------------------------\n")
-    for param, value in sorted(CONFIG.items()):
-        print("%s:\t" % param)
-        print(str(value))
-        print("\n")
-    print("----------------------------------------------------\n")
-
     train_data_generator, valset = dataset.get_cifar10(batch_size*num_gpus)
     train(train_data_generator)
 
@@ -119,4 +109,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     with open(args.config_file) as fp:
         CONFIG.update(json.load(fp))
+        print "Experiment config"
+        print "------------------"
+        print json.dumps(CONFIG, indent=4)
+        print "------------------"
     main()
