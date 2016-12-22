@@ -19,7 +19,7 @@ def load_weights(graph, fpath):
         print("assigning %s" % v.name)
         sess.run(v.assign(data[v.name]))
 
-def run_iterative(ops, inputs, args, batch_size):
+def iterative_reduce(ops, inputs, args, batch_size, fn):
     """
     calls session.run for mini batches of batch_size in length
 
@@ -29,6 +29,7 @@ def run_iterative(ops, inputs, args, batch_size):
         args: a list of arrays you want to split into minibatches and feed into feed_dict. This
               must be the same order as your inputs
         batch_size: size of your mini batch
+        fn: aggregate each output from ops using this function (ex: lambda x: np.mean(x, axis=0))
     """
     sess = tf.get_default_session()
     N = len(args[0])
@@ -39,6 +40,7 @@ def run_iterative(ops, inputs, args, batch_size):
         minibatch_args = [a[batch_start:batch_end] for a in args]
         result = sess.run(ops, dict(zip(inputs, minibatch_args)))
         results.append(result)
+    results = [fn(r) for r in zip(*results)]
     return results
 
 class StatLogger:
