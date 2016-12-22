@@ -40,3 +40,27 @@ def run_iterative(ops, inputs, args, batch_size):
         result = sess.run(ops, dict(zip(inputs, minibatch_args)))
         results.append(result)
     return results
+
+class StatLogger:
+    """
+    file writer to record various statistics
+    """
+
+    def __init__(self, fpath):
+        import os
+        import os.path as pth
+
+        self.fpath = fpath
+        fdir = pth.split(fpath)[0]
+        if len(fdir) > 0 and not pth.exists(fdir):
+            os.makedirs(fdir)
+
+
+    def report(self, step, **kwargs):
+        import json
+        with open(self.fpath, "a") as fh:
+            data = {
+                "step": step
+            }
+            data.update(kwargs)
+            fh.write(json.dumps(data) + "\n")

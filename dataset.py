@@ -3,22 +3,6 @@ import numpy as np
 import tensorflow as tf
 
 
-def random_test_input(batch_size=16):
-    """
-    this generates random test input, useful for debugging
-    """
-    sz = 224
-    channels = 3
-    init_val = tf.random_normal(
-        (batch_size, sz, sz, channels),
-        dtype=tf.float32,
-        stddev=1
-    )
-    images = tf.Variable(init_val)
-    labels = tf.Variable(tf.ones([batch_size], dtype=tf.int32))
-    return images, labels
-
-
 def get_cifar10(batch_size=16):
     print("loading cifar10 data ... ")
 
