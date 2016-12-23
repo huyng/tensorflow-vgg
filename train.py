@@ -96,7 +96,7 @@ def train(trn_data_generator, vld_data=None):
                        loss=float(results["loss"]))
 
             # report evaluation metrics every 10 training steps
-            if step % vld_iter == 0:
+            if (step % vld_iter == 0):
                 print("-- running evaluation on vld split")
                 X_vld = vld_data[0]
                 Y_vld = vld_data[1]
@@ -115,7 +115,7 @@ def train(trn_data_generator, vld_data=None):
                            error_top1=float(results["error_top1"]),
                            loss=float(results["loss"]))
 
-            if step % checkpoint_iter == 0 or (step + 1 == num_steps):
+            if (step % checkpoint_iter == 0) or (step + 1 == num_steps):
                 print("-- saving check point")
                 tools.save_weights(G, pth.join(checkpoint_dir, "weights.%s" % step))
 

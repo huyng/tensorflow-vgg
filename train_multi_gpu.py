@@ -111,7 +111,7 @@ def train(train_data_generator):
                        loss=float(results[1]))
 
 
-            if step % checkpoint_iter == 0 or (step + 1 == num_steps):
+            if (step % checkpoint_iter == 0) or (step + 1 == num_steps):
                 print("-- saving check point")
                 tools.save_weights(G, pth.join(checkpoint_dir, "weights.%s" % step))
 
