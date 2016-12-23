@@ -35,10 +35,14 @@ def build_model(input_data_tensor, input_label_tensor):
     error_top1 = L.topK_error(probs, input_label_tensor, K=1)
 
     # you must return a dictionary with loss as a key, other variables
-    return dict(loss=loss, probs=probs, logits=logits, error_top5=error_top5, error_top1=error_top1)
+    return dict(loss=loss,
+                probs=probs,
+                logits=logits,
+                error_top5=error_top5,
+                error_top1=error_top1)
+
 
 def train(trn_data_generator, vld_data=None):
-    batch_size = 10
     learning_rate = config['learning_rate']
     experiment_dir = config['experiment_dir']
     data_dims = config['data_dims']
@@ -51,6 +55,7 @@ def train(trn_data_generator, vld_data=None):
     train_log_fpath = pth.join(experiment_dir, 'train.log')
     vld_iter = config["vld_iter"]
     checkpoint_iter = config["checkpoint_iter"]
+    pretrained_weights = config.get("pretrained_weights", None)
 
     # ========================
     # construct training graph
@@ -69,12 +74,17 @@ def train(trn_data_generator, vld_data=None):
     # ===================================
     # initialize and run training session
     # ===================================
-    log = tools.StatLogger(train_log_fpath)
+    log = tools.MetricsLogger(train_log_fpath)
     config_proto = tf.ConfigProto(allow_soft_placement=True)
     sess = tf.Session(graph=G, config=config_proto)
     sess.run(init)
     tf.train.start_queue_runners(sess=sess)
     with sess.as_default():
+        if pretrained_weights:
+            print("-- loading weights from %s" % pretrained_weights)
+            tools.load_weights(G, pretrained_weights)
+
+
         # Start training loop
         for step in range(num_steps):
             batch_train = trn_data_generator.next()

@@ -48,12 +48,13 @@ def train(train_data_generator):
     num_gpus = config['num_gpus']
     num_epochs = config['num_epochs']
     num_samples_per_epoch = config["num_samples_per_epoch"]
+    pretrained_weights = config["pretrained_weights"]
     steps_per_epoch = num_samples_per_epoch // (batch_size * num_gpus)
     num_steps = steps_per_epoch * num_epochs
     checkpoint_iter = config["checkpoint_iter"]
     experiment_dir = config['experiment_dir']
     train_log_fpath = pth.join(experiment_dir, 'train.log')
-    log = tools.StatLogger(train_log_fpath)
+    log = tools.MetricsLogger(train_log_fpath)
 
 
     # =====================
@@ -101,14 +102,16 @@ def train(train_data_generator):
     sess.run(init)
     tf.train.start_queue_runners(sess=sess)
     with sess.as_default():
+        if pretrained_weights:
+            print("-- loading weights from %s" % pretrained_weights)
+            tools.load_weights(G, pretrained_weights)
+
         for step in range(num_steps):
             data_batch, label_batch = train_data_generator.next()
             inputs = {data: data_batch, labels: label_batch}
             results = sess.run([train_step, loss], inputs)
             print("step:%s loss:%s" % (step, results[1]))
-            log.report(step=step,
-                       split="TRN",
-                       loss=float(results[1]))
+            log.report(step=step, split="TRN", loss=float(results[1]))
 
 
             if (step % checkpoint_iter == 0) or (step + 1 == num_steps):

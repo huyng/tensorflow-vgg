@@ -8,14 +8,14 @@ import tensorflow as tf
 import layers as L
 
 
-def logits(input_tensor, n_classes=1000, rgb_mean=None, training=True):
+def build(input_tensor, n_classes=1000, rgb_mean=None, training=True):
     # assuming 224x224x3 input_tensor
 
     # define image mean
     if rgb_mean is None:
         rgb_mean = np.array([116.779, 123.68, 103.939], dtype=np.float32)
     mu = tf.constant(rgb_mean, name="rgb_mean")
-    keep_prob = 0.5 if training else 1.0
+    keep_prob = 0.5
 
     # subtract image mean
     net = tf.sub(input_tensor, mu, name="input_mean_centered")
