@@ -47,7 +47,6 @@ def train(trn_data_generator, vld_data=None):
     num_samples_per_epoch = config["num_samples_per_epoch"]
     steps_per_epoch = num_samples_per_epoch // batch_size
     num_steps = steps_per_epoch * num_epochs
-    steps_per_epoch = 50000/batch_size
     checkpoint_dir = pth.join(experiment_dir, 'checkpoints')
     train_log_fpath = pth.join(experiment_dir, 'train.log')
     vld_iter = config["vld_iter"]
