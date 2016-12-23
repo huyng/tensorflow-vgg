@@ -10,8 +10,8 @@ import layers as L
 import dataset
 import yaml
 import tools
+import argparse
 
-from argparse import ArgumentParser
 
 # =====================================
 # Training configuration default params
@@ -135,7 +135,7 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument('config_file', help='YAML formatted config file')
     args = parser.parse_args()
     with open(args.config_file) as fp:

@@ -10,7 +10,7 @@ import layers as L
 import tools
 import dataset
 import yaml
-from argparse import ArgumentParser
+import argparse
 
 
 # =====================================
@@ -135,7 +135,7 @@ def main():
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument('config_file', help='YAML formatted config file')
     args = parser.parse_args()
     with open(args.config_file) as fp:
